@@ -1,39 +1,52 @@
+!!! WORK IN PROGRESS !!!
+
+A direct port of the genie arduino library to the Pi Pico. While this has been ( barely ) tested, more might be required. I am not responsible for any damage, boom boom, yeet yote or whatever happens with your devices.
+
+- JT
+
 ![image](http://www.4dsystems.com.au/downloads/4DLogo.png)
 
-ViSi-Genie-Arduino-Library-DEV (A.K.A genieArduinoDEV)
+ViSi-Genie-PiPico-Library-DEV (A.K.A geniePiPicoDEV)
 ==============================================================
 
-Arduino Library for 4D Systems ViSi-Genie Environment - Development Version
+PiPico Library for 4D Systems ViSi-Genie Environment - Development Version
 
-This library is the newly improved version of the original genieArduino library, and is classed as **STABLE**.
-This will eventually become the main genieArduino library in time, and is encouraged to be used as it includes new features over the original.
-Original library found here: https://github.com/4dsystems/ViSi-Genie-Arduino-Library
+This library is the newly improved version of the original geniePiPico library, and is classed as **STABLE**.
+This will eventually become the main geniePiPico library in time, and is encouraged to be used as it includes new features over the original.
+Original library found here: https://github.com/4dsystems/ViSi-Genie-PiPico-Library
 
 This library supports the following:
 Support for negative numbers, unsigned longs, unsigned integers with the WriteStr function.
 Features enhanced String Writing capability, no longer is a character Array the only viable option. 
 Support for Workshop4 PRO features.
-2+ displays connected to a single Arduino, and adds a Demo to illustrate how that is achieved.
+2+ displays connected to a single PiPico, and adds a Demo to illustrate how that is achieved.
 New Internal and Inherent Widgets.
 Much more...
 
 ## Information
 
-This library provides high level functions for the Arduino, to ease communication with 4D Systems modules when using the module configured with ViSi-Genie.
+This library provides high level functions for the PiPico, to ease communication with 4D Systems modules when using the module configured with ViSi-Genie.
 Workshop4 PRO adds additional features to ViSi-Genie, allowing the User to write 4DGL code which can be executed at will from ViSi-Genie, enabling many advanced features not previously possible.
 Please refer to the 4D Systems website, namingly the Workshop4 Product Page, for documentation regarding Workshop4, and its environments.
 
 ## Installation
 
-Library folder should be placed in the C:\\Users\\%USERNAME%\\Documents\\Arduino\\Libraries\\ folder, or equivalent. (restart the IDE if already open).
+Since the pico SDK uses CMake as its default build system, this library is designed to be compatible with it.
+Clone the repository ( with the option --recursive to grab all submodules) into your project directory. Then, include the CMakeLists.txt at the beginning of your project. In the end, link to GeniePico.
 
-PLEASE ensure that the old library (if installed) has been removed completely so it does not conflict.
+An example flow would be
 
-For more information on the installation, please refer to [Installing Additional Arduino Libraries] (http://arduino.cc/en/Guide/Libraries)
+    git submodule add https://github.com/jtmaston/ViSi-Genie-PiPico-Library-DEV.git genie
+    git submodule init
+    git submodule update
 
-Open the ViSi-Genie project using Workshop4 and download to your display, connect the display to Arduino, reset the Arduino and it should work.
+Your CMakeLists should contain, somewhere at the top
+    include(genie/CMakeLists.txt)
 
-This library should be discoverable from the Arduino IDE Library Manager too.
+Then, at the bottom
+    target_link_libraries(executable GeniePico)
+
+You may also need to point the target_include_directories to the installation dir
 
 ## Example Sketch
 
@@ -41,8 +54,7 @@ Inside the library are 5 example sketches, to assist with getting started using 
 
 ## Tested with
 
-This library has been tested on the Duemilanove, Uno, Mega 1280, Mega 2560, Leonardo, Chipkit Max32, Due, Teensy, Yun (Software Serial only), Raspberry Pi Pico, Various SAM/SAMD boards, Teknic ClearCore. 
-Any problems discovered with this library, please contact technical support so fixes can be put in place, or seek support from our forum.
+This library has been ( barely ) tested on the PiPico reference board. If you have any issues, please scream. I'm not sure I'll have time to fix them, as this port is part of a bigger project I'm working on, but if I can I will.
 
 ## Compatible 4D Systems Display Modules
 
@@ -52,75 +64,47 @@ The demo included with this library was made for the gen4-uLCD-32DCT-CLB (3.2" C
 ## General Library Discussion
 -----------------------------
 
-This section serves to give brief discussion about the constructor and functions included in the library. For functional examples on how to use these functions in a project, refer to the examples folder.
+This section serves to give brief discussion about the constructor and functions included in the library. For functional examples on how to use these functions in a project, refer to the examples folder. ( note: I haven't checked the examples, take this with a grain of salt )
 
-### Genie()
+Functions marked with :heavy_check_mark: have been tested and are working.
+
+### Genie()                         :heavy_check_mark:
 This is the constructor for the library. It creates a unique instance that can be set to use the desired serial port.
 
     Genie genie; // Creates a new instance named 'genie'
 
-### Begin(HardwareSerial &serial)
+### Begin(HardwareSerial &serial)   :heavy_check_mark:
 Assigns a HardwareSerial *serial* object to the Genie instance
 
 | Parameters | Description |
 |:----------:| ----------- |
 | serial     | HardwareSerial object that represents the UART hardware |
 
-    Serial.begin(115200); // Open Serial @115200
-    // Can use other Serial UART's (Serial1, Serial2...) depending on your Arduino.
-    genie.Begin(Serial);  // Sets Serial/Serial0 to be used by the Genie instance
+    uart_init(uart1, 115200); // Open Serial @115200
+    // Can use other Serial UART's (uart0, uart1...) depending on your PiPico.
+    genie.Begin(uart1);  // Sets Serial/Serial0 to be used by the Genie instance
 
-### Begin(SoftwareSerial &serial)
-Assigns a SoftwareSerial *serial* object to the Genie instance
 
-| Parameters | Description |
-|:----------:| ----------- |
-| serial     | SoftwareSerial object that represents the UART hardware |
 
-    Genie genie;
-    SoftwareSerial GenieSerial(2, 3);
-
-    void setup() {
-        GenieSerial.begin(9600);  // Open Serial @9600
-        genie.Begin(GenieSerial); // Sets GenieSerial to be used by the Genie instance
-    }
-
-##### **Note**: _This is only available for boards that support SoftwareSerial. In case of compilation issues with SoftwareSerial, your board might not be supported by the SoftwareSerial library. Please submit an issue report [here](/issues/new)._
-
-### Begin(Stream &serial, uint16_t txDelay)
-Assigns a Stream *serial* object to the Genie instance. This allows alternative SoftwareSerial libraries to work with the library
-
-| Parameters | Description |
-|:----------:| ----------- |
-| serial     | Stream object that represents the UART hardware |
-| txDelay</br>(Optional) | Short delay in microseconds that separates each byte sent by the library. This can improve communication stability (default: 0) |
-
-    Genie genie;
-    AltSoftSerial GenieSerial;
-
-    void setup() {
-        GenieSerial.begin(19200); // Open Serial @19200
-        genie.Begin(GenieSerial); // Sets GenieSerial to be used by the Genie instance
-    }
-
-### AttachDebugStream(Stream &serial)
+### AttachDebugStream(Stream &serial)   :heavy_check_mark:
 Assigns a Stream *serial* object to the Genie instance for sending debug messages.
 
+NOTE: a limitation of this port is that only UART0 can be used for debugging. AttachDebugStream(uart1) will still default to uart0.
+
 | Parameters | Description |
 |:----------:| ----------- |
 | serial     | Stream object that represents the UART hardware |
 
     Genie genie;
-    SoftwareSerial GenieSerial(2, 3);
 
-    void setup() {
-        Serial.begin(115200); // Open Serial @115200
+    void main() {
+        uart_init(uart1, 115200) // Open Serial @115200
 		GenieSerial.begin(9600);  // Open Serial @9600
-        genie.AttachDebugStream(Serial); // Sets main (USB) Serial for debugging
-        genie.Begin(GenieSerial); // Sets GenieSerial to be used by the Genie instance
+        genie.AttachDebugStream(uart0); // Sets main (USB) Serial for debugging
+        genie.Begin(uart1); // Sets GenieSerial to be used by the Genie instance
     }
 
-### Ping(uint16_t interval)
+### Ping(uint16_t interval)                                                     
 Sends a ping (form query) if the *interval* provided has been reached.
 
     genie.Ping(500); // sends a Ping if the last command was at least 500ms ago
@@ -154,7 +138,7 @@ Returns whether or not the display is detected
             break;
     }
 
-### SetForm(uint8_t newForm)
+### SetForm(uint8_t newForm)    :heavy_check_mark:
 Sets the display to the target *newform*
 
     genie.SetForm(5); // Activate Form5 of the display
@@ -164,7 +148,7 @@ Sets the interval used when trying to recover connectivity and syncronization wi
 
     genie.SetRecoveryInterval(50); // Sets recovery interval to 50ms
 
-### ReadObject(uint16_t object, uint16_t index, bool now)
+### ReadObject(uint16_t object, uint16_t index, bool now)   :heavy_check_mark:
 Sends a request to read the value of the widget specified by *object* (ex: GENIE_OBJ_GAUGE) and *index*. The value will be sent as a GENIE_REPORT_OBJECT command.
 A full list of available objects (ex: GENIE_OBJ_GAUGE, GENIE_OBJ_SLIDER etc) can be found at the bottom of this Readme.
 
@@ -179,7 +163,7 @@ A full list of available objects (ex: GENIE_OBJ_GAUGE, GENIE_OBJ_SLIDER etc) can
     // Request a report of Gauge1 and let it be handled through genie.DoEvents
     genie.ReadObject(GENIE_OBJ_GAUGE, 1);
 
-### WriteObject(uint16_t object, uint16_t index, uint16_t data)
+### WriteObject(uint16_t object, uint16_t index, uint16_t data) :heavy_check_mark:
 Updates the widget, specified by *object* (ex: GENIE_OBJ_GAUGE) and *index*, to a new value specified by *data*
 A full list of available objects (ex: GENIE_OBJ_GAUGE, GENIE_OBJ_SLIDER etc) can be found at the bottom of this Readme.
 
@@ -191,7 +175,7 @@ A full list of available objects (ex: GENIE_OBJ_GAUGE, GENIE_OBJ_SLIDER etc) can
 
     genie.WriteObject(GENIE_OBJ_GAUGE, 0, 50); // Sets Gauge0 to 50
 
-### WriteIntLedDigits(uint16_t index, int16_t data)
+### WriteIntLedDigits(uint16_t index, int16_t data) :heavy_check_mark:
 Updates the Internal LedDigits specified by *index* to a new 16-bit value, specified by *data*. The widget parameter *Format* in ViSi Genie project should be set to Int16. Internal LedDigits are available for Diablo and Pixxi displays.
 
 | Parameters | Description |
@@ -201,7 +185,7 @@ Updates the Internal LedDigits specified by *index* to a new 16-bit value, speci
 
     genie.WriteIntLedDigits(0, 50); // Sets ILedDigits0 to 50
 
-### WriteIntLedDigits(uint16_t index, float data)
+### WriteIntLedDigits(uint16_t index, float data)   :heavy_check_mark:
 Updates the Internal LedDigits specified by *index* to a new 32-bit float value, specified by *data*. The widget parameter *Format* in ViSi Genie project should be set to any Float option. Internal LedDigits are available for Diablo and Pixxi displays.
 
 | Parameters | Description |
@@ -211,7 +195,7 @@ Updates the Internal LedDigits specified by *index* to a new 32-bit float value,
 
     genie.WriteIntLedDigits(0, 3.1416f); // Sets ILedDigits0 to 3.1416
 
-### WriteIntLedDigits(uint16_t index, int32_t data)
+### WriteIntLedDigits(uint16_t index, int32_t data) :heavy_check_mark:
 Updates the Internal LedDigits specified by *index* to a new 32-bit integer value, specified by *data*. The widget parameter *Format* in ViSi Genie project should be set to Int16. Internal LedDigits are available for Diablo and Pixxi displays.
 
 | Parameters | Description |
@@ -231,7 +215,7 @@ Sets the display contrast/brightness to a new *value*
     genie.WriteContrast(0); // Sets the contrast/brightness value to 0, effectively turning off the backlight
     genie.WriteContrast(10); // Sets the contrast/brightness value to 10, about 2/3 max brightness
 
-### WriteStr(uint16_t index, const char * string)
+### WriteStr(uint16_t index, const char * string)   
 Updates the String widget specified by *index* with a new character string specified by *string*
 
 | Parameters | Description |
@@ -261,7 +245,7 @@ Updates the String widget specified by *index* with a string stored in program s
 | ifsh       | Flash string containing the text to print in the String widget |
 
     // Writes the string stored in flash memory to String1
-	genie.WriteStr(1, F("Hello from Flash Memory")); // For AVR Arduinos only
+	genie.WriteStr(1, F("Hello from Flash Memory")); // For AVR PiPicos only
         
 ### WriteStrU(uint16_t index, uint16_t * string)
 Updates the String widget specified by *index* with a new Unicode (16-bit) character string specified by *string*
@@ -413,7 +397,7 @@ Updates the Inherent Label widget specified by *index* with a string stored in p
 | ifsh       | Flash string containing the text to print in the Inherent Label widget |
 
     // Writes the string stored in flash memory to ILabelB1
-    genie.WriteInhLabel(1, F("Hello from Flash Memory")); // For AVR Arduinos only
+    genie.WriteInhLabel(1, F("Hello from Flash Memory")); // For AVR PiPicos only
 
 ### WriteInhLabel(uint16_t index, String s)
 Updates the Inherent Label widget specified by *index* with a Inherent Label widget specified by *s*
@@ -821,6 +805,4 @@ For more information on each of the actual Widgets in Workshop4, please refer to
 
 ## Questions/Issues?
 
-Please sign up for our Forum and ask a question there, or submit a Tech Support Ticket from our website.
-http://forum.4dsystems.com.au or http://www.4dsystems.com.au/support
-Feel free to add a Github issue if you find a problem, we will do our best to help solve the problem.
+This is an unofficial port. Please don't bother the fine folks at 4D Systems. Open a github issue. Support isn't guaranteed, but I will try.

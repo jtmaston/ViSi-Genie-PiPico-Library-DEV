@@ -1,8 +1,11 @@
 #ifndef Genie_Buffer_H
 #define Genie_Buffer_H
 //#include <algorithm>
-
+#include <iostream>
+#include <cstring>
+#include <cstdlib>
 template<typename T, uint16_t _size, uint16_t multi = 0>
+
 class Genie_Buffer {
     public:
 
@@ -336,69 +339,96 @@ template<typename T, uint16_t _size, uint16_t multi>
 T Genie_Buffer<T,_size,multi>::list() {
   if ( multi ) {
     if ( !size() ) {
-      Serial.println("There are no queues available..."); return 0;
+      //Serial.println("There are no queues available..."); return 0;
+      std::cout << "There are no queues available...\n"; return 0;
     }
 
-    Serial.print("\nCircular Array Buffer Queue Size: "); Serial.print(size()); Serial.print(" / "); Serial.println(_size);
-
-    Serial.print("\nFirst Entry: ");
+    //Serial.print("\nCircular Array Buffer Queue Size: "); Serial.print(size()); Serial.print(" / "); Serial.println(_size);
+    std::cout << "\nCircular Array Buffer Queue Size: " << size() << " / " << _size;
+    //Serial.print("\nFirst Entry: ");
+    std::cout << "First Entry: ";
     for ( uint16_t i = 2; i <= (((int)_cabuf[((head)&(_size-1))][0] << 8*sizeof(T)) | (int)_cabuf[((head)&(_size-1))][1])+1; i++ ) {
       if ( (int)(_cabuf[((head+i)&(_size-1))][i]) != (T)(_cabuf[((head+i)&(_size-1))][i]) ) { // possible float?
-        Serial.print(_cabuf[((head)&(_size-1))][i],7);
+        //Serial.print(_cabuf[((head)&(_size-1))][i],7);
+        std::cout << _cabuf[((head)&(_size-1))][i];
       }
-      else Serial.print(_cabuf[((head)&(_size-1))][i]);
-      Serial.print("    ");
-    } Serial.print("("); Serial.print((((int)_cabuf[((head)&(_size-1))][0] << 8*sizeof(T)) | (int)_cabuf[((head)&(_size-1))][1])); Serial.println(" entries.)");
+      else //Serial.print(_cabuf[((head)&(_size-1))][i]);
+        std::cout << _cabuf[((head)&(_size-1))][i];
+      //Serial.print("    ");
+      std::cout << "     ";
+      std::cout << "(" << (((int)_cabuf[((head)&(_size-1))][0] << 8*sizeof(T)) | (int)_cabuf[((head)&(_size-1))][1]) << " entries.\n";
+    } //Serial.print("("); Serial.print((((int)_cabuf[((head)&(_size-1))][0] << 8*sizeof(T)) | (int)_cabuf[((head)&(_size-1))][1])); Serial.println(" entries.)");
 
-    Serial.print("Last Entry:  ");
+    //Serial.print("Last Entry:  ");
+    std::cout << "Last Entry:  ";
     for ( uint16_t i = 2; i <= (((int)_cabuf[((head+size()-1)&(_size-1))][0] << 8*sizeof(T)) | (int)_cabuf[((head+size()-1)&(_size-1))][1])+1; i++ ) {
       if ( (int)(_cabuf[((head+size()-1)&(_size-1))][i]) != (T)(_cabuf[((head+size()-1)&(_size-1))][i]) ) { // possible float?
-        Serial.print(_cabuf[((head+size()-1)&(_size-1))][i],7);
+        //Serial.print(_cabuf[((head+size()-1)&(_size-1))][i],7);
+        std::cout << _cabuf[((head+size()-1)&(_size-1))][i],7;
       }
-      else Serial.print(_cabuf[((head+size()-1)&(_size-1))][i]);
-      Serial.print("    ");
-    } Serial.print("("); Serial.print((((int)_cabuf[((head+size()-1)&(_size-1))][0] << 8*sizeof(T)) | (int)_cabuf[((head+size()-1)&(_size-1))][1])); Serial.println(" entries.)");
+      else //Serial.print(_cabuf[((head+size()-1)&(_size-1))][i]);
+        std::cout << _cabuf[((head+size()-1)&(_size-1))][i];
+      std::cout << "     ";
+      std::cout << "(" << (((int)_cabuf[((head+size()-1)&(_size-1))][0] << 8*sizeof(T)) | (int)_cabuf[((head+size()-1)&(_size-1))][1]) << " entries\n";
+      // Serial.print("    ");
+    } //Serial.print("("); Serial.print((((int)_cabuf[((head+size()-1)&(_size-1))][0] << 8*sizeof(T)) | (int)_cabuf[((head+size()-1)&(_size-1))][1])); Serial.println(" entries.)");
 
-    Serial.print("\n[Indice]      [Entries]\n\n"); 
+    //Serial.print("\n[Indice]      [Entries]\n\n"); 
+    std::cout << "\n[Indice]      [Entries]\n\n";
     for ( uint16_t i = 0; i < size(); i++ ) {
-      Serial.print("    ");
-      Serial.print(((head+i)&(_size-1)));
-      Serial.print("\t\t");
+      ///Serial.print("    ");
+      std::cout << "    ";
+      std::cout << ((head+i)&(_size-1));
+      std::cout << "\t\t";
+      //Serial.print(((head+i)&(_size-1)));
+      //Serial.print("\t\t");
       for ( uint16_t j = 2; j <= (((int)_cabuf[((head+i)&(_size-1))][0] << 8*sizeof(T)) | (int)_cabuf[((head+i)&(_size-1))][1])+1; j++ ) {
         if ( (int)(_cabuf[((head+i)&(_size-1))][j]) != (T)(_cabuf[((head+i)&(_size-1))][j]) ) { // possible float?
-          Serial.print(_cabuf[((head+i)&(_size-1))][j],7); Serial.print("\t");
+          //Serial.print(_cabuf[((head+i)&(_size-1))][j],7); Serial.print("\t");
+          std::cout << _cabuf[((head+i)&(_size-1))][j] << "\t";
         }
         else {
-          Serial.print(_cabuf[((head+i)&(_size-1))][j]); Serial.print("\t");
+          //Serial.print(_cabuf[((head+i)&(_size-1))][j]); Serial.print("\t");
+          std::cout << _cabuf[((head+i)&(_size-1))][j] << '\t';
         }
-      } Serial.print("("); Serial.print((((int)_cabuf[((head+i)&(_size-1))][0] << 8*sizeof(T)) | (int)_cabuf[((head+i)&(_size-1))][1])); Serial.println(" entries.)");
-    }
+      } //Serial.print("("); Serial.print((((int)_cabuf[((head+i)&(_size-1))][0] << 8*sizeof(T)) | (int)_cabuf[((head+i)&(_size-1))][1])); Serial.println(" entries.)");
+      std::cout << "(" << (((int)_cabuf[((head+i)&(_size-1))][0] << 8*sizeof(T)) | (int)_cabuf[((head+i)&(_size-1))][1]) << " entries\n";
+    } 
     return _available;
   }
 
 
   if ( !size() ) {
-    Serial.println("There are no queues available..."); return 0;
+    //Serial.println("There are no queues available..."); return 0;
+    std::cout << "There are no queues available..."; return 0;
   }
-  Serial.print("\nCircular Ring Buffer Queue Size: "); Serial.print(size()); Serial.print(" / "); Serial.println(_size);
-
-  Serial.print("\nIndice:  \t"); 
+  std::cout << "\nCircular Ring Buffer Queue Size: " << size() << " / " << _size << '\n';
+  //Serial.print("\nCircular Ring Buffer Queue Size: "); Serial.print(size()); Serial.print(" / "); Serial.println(_size);
+  std::cout << "\n Indice: \t";
+  //Serial.print("\nIndice:  \t"); 
 
   for ( uint16_t i = 0; i < _available; i++ ) {
-    Serial.print("[");
-    Serial.print((head+i)&(_size-1)); Serial.print("]      \t");
+    //Serial.print("[");
+    //Serial.print((head+i)&(_size-1)); Serial.print("]      \t");
+    std::cout << "[";
+    std::cout << ((head+i)&(_size-1));
+    std::cout << "]      \t";
   }
 
-  Serial.print("\nEntries:\t");
+  //Serial.print("\nEntries:\t");
+  std::cout << "\nEntries:\t";
 
   for ( uint16_t i = 0; i < _available; i++ ) {
     if ( (int)_cbuf[((head+i)&(_size-1))] != (T)_cbuf[((head+i)&(_size-1))] ) { // possible float?
-      Serial.print(_cbuf[((head+i)&(_size-1))],7); Serial.print("\t");
+      //Serial.print(_cbuf[((head+i)&(_size-1))],7); Serial.print("\t");
+      std::cout << (_cbuf[((head+i)&(_size-1))] )<< '\t';
     }
     else {
-      Serial.print(_cbuf[((head+i)&(_size-1))]); Serial.print("\t\t");
+      //Serial.print(_cbuf[((head+i)&(_size-1))]); Serial.print("\t\t");
+      std::cout << _cbuf[((head+i)&(_size-1))] << "\t\t";
     }
-  } Serial.println('\n');
+  } //Serial.println('\n'); 
+  std::cout << "\n\n";
 
 
 

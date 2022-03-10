@@ -1,10 +1,11 @@
-/////////////////////// GenieArduino DEV ///////////////////////
+/////////////////////// GeniePico DEV ///////////////////////
 //
 //      Library to utilize the 4D Systems Genie interface to displays
 //      that have been created using the Visi-Genie creator platform.
-//      This is intended to be used with the Arduino platform.
+//      This is intended to be used with the PiPico platform.
 //
 //      Improvements/Updates by
+//        Anastasiu Alexandru, March 2022
 //        Antonio Brewer & 4D Systems Engineering, February 2022, www.4dsystems.com.au
 //        Antonio Brewer & 4D Systems Engineering, January 2022, www.4dsystems.com.au
 //        Antonio Brewer & 4D Systems Engineering, July 2021, www.4dsystems.com.au
@@ -45,21 +46,14 @@
       If not, see <http://www.gnu.org/licenses/>.
  *********************************************************************/
 
-#if defined (SPARK)
-#include "application.h"
-#define lowByte(w) ((uint8_t)((w) & 0xFF))
-#define highByte(w) ((uint8_t)((w) >> 8))
-#else
-#if defined(ARDUINO) && ARDUINO >= 100
-#include "Arduino.h"
-#else
-#include "WProgram.h"
-#endif
-#endif
-
 #include <inttypes.h>
 #include "genie_buffer.h"
 #include <stdint.h>
+#include <cmath>
+#include <string>
+#include "pico/stdlib.h"
+#include <cstdio>
+#include <cstring>
 
 #define GENIE_SS_SUPPORT !defined(ARDUINO_ARCH_SAM) \
                       && !defined(ARDUINO_ARCH_RP2040) \
@@ -67,14 +61,10 @@
                       // this lists the known board family that
                       // doesn't support SoftwareSerial
 
-#if GENIE_SS_SUPPORT
-#include <SoftwareSerial.h>
-#endif
-
 #ifndef genieArduinoDEV_h
 #define genieArduinoDEV_h
 
-#define GENIE_VERSION    "GenieArduino 2022"   // DD-MM-YYYY
+#define GENIE_VERSION    "GeniePico 2022"   // DD-MM-YYYY
 
 // Genie commands & replys:
 
@@ -245,15 +235,13 @@ typedef void  (*UserDoubleBytePtr)(uint8_t, uint8_t);
 //
 class Genie {
   public:
-    Genie_Buffer < uint8_t, (uint32_t)pow(2, ceil(log(MAX_GENIE_EVENTS) / log(2))), 6 > _incomming_queue; /* currentForm, cmd, object, index, data1, data2 */
-    Genie_Buffer < uint8_t, (uint32_t)pow(2, ceil(log(MAX_GENIE_EVENTS) / log(2))), 7 > _outgoing_queue; /* currentForm, cmd, object, index, data1, data2, crc */
+    Genie_Buffer < uint8_t, (uint32_t)pow(2, ceil(log(MAX_GENIE_EVENTS) / log(2))),(uint16_t) 6 > _incomming_queue; /* currentForm, cmd, object, index, data1, data2 */
+    Genie_Buffer < uint8_t, (uint32_t)pow(2, ceil(log(MAX_GENIE_EVENTS) / log(2))),(uint16_t) 7 > _outgoing_queue; /* currentForm, cmd, object, index, data1, data2, crc */
     Genie                                     ();
-#if GENIE_SS_SUPPORT
-    bool          Begin                       (SoftwareSerial &serial);
-#endif
-    bool          Begin                       (HardwareSerial &serial);
-    bool          Begin                       (Stream &serial, uint16_t txDelay = 0);
-    void          AttachDebugStream           (Stream &serial);
+
+    bool          Begin                       (uart_inst_t* );
+    bool          Begin                       (uart_inst_t &serial, uint16_t txDelay = 0);
+    void          AttachDebugStream           (uart_inst_t* serial);
     bool          IsOnline                    ();
     int16_t       GetForm                     ();
     void          SetForm                     (uint8_t newForm);
@@ -264,8 +252,8 @@ class Genie {
     uint16_t      WriteIntLedDigits           (uint16_t index, float data);
     uint16_t      WriteIntLedDigits           (uint16_t index, int32_t data);
     bool          WriteContrast               (uint8_t value);
-    bool          WriteStr                    (uint8_t index, const char *string);
-    bool          WriteStr                    (uint8_t index, String string);
+    bool          WriteStr                    (uint8_t index, const char *str);
+    bool          WriteStr                    (uint8_t index, std::string str);
     uint16_t      WriteStr                    (uint16_t index, long n) ;
     uint16_t      WriteStr                    (uint16_t index, long n, int base) ;
     uint16_t      WriteStr                    (uint16_t index, unsigned long n) ;
@@ -275,13 +263,13 @@ class Genie {
     uint16_t      WriteStr                    (uint16_t index, unsigned int n) ;
     uint16_t      WriteStr                    (uint16_t index, unsigned int n, int base) ;
 #ifdef AVR
-    uint16_t      WriteStr                    (uint16_t index, const __FlashStringHelper *ifsh);
+    uint16_t      WriteStr                    (uint16_t index, const __Flashstd::stringHelper *ifsh);
 #endif
     uint16_t      WriteStr                    (uint16_t index, double n, int digits);
     uint16_t      WriteStr                    (uint16_t index, double n);
-    uint16_t      WriteStrU                   (uint16_t index, uint16_t *string);
-    bool          WriteInhLabel               (uint8_t index, const char *string);
-    bool          WriteInhLabel               (uint8_t index, String string);
+    uint16_t      WriteStrU                   (uint16_t index, uint16_t *str);
+    bool          WriteInhLabel               (uint8_t index, const char *str);
+    bool          WriteInhLabel               (uint8_t index, std::string str);
     uint16_t      WriteInhLabel               (uint16_t index);
     uint16_t      WriteInhLabel               (uint16_t index, long n) ;
     uint16_t      WriteInhLabel               (uint16_t index, long n, int base) ;
@@ -293,7 +281,7 @@ class Genie {
     uint16_t      WriteInhLabel               (uint16_t index, unsigned int n, int base) ;
     uint16_t      WriteInhLabel               (uint16_t index, double n, int digits = 2);
 #ifdef AVR
-    uint16_t      WriteInhLabel               (uint16_t index, const __FlashStringHelper *ifsh);
+    uint16_t      WriteInhLabel               (uint16_t index, const __Flashstd::stringHelper *ifsh);
 #endif
     uint8_t       EventIs                     (genieFrame * e, uint8_t cmd, uint8_t object, uint8_t index);
     uint16_t      GetEventData                (genieFrame * e);
@@ -320,8 +308,8 @@ class Genie {
     //
     EventQueueStruct EventQueue;
 
-    Stream* deviceSerial;
-    Stream* debugSerial;
+    uart_inst_t* deviceSerial;
+    uart_inst_t* debugSerial;
 
     UserEventHandlerPtr UserHandler;
     UserBytePtr UserByteReader;
@@ -335,7 +323,7 @@ class Genie {
     bool          pendingACK = 0;
     uint32_t      pendingACK_timeout = 0;
     int16_t       currentForm = -1;
-    uint32_t      autoPingTimer = millis();
+    uint32_t      autoPingTimer = to_ms_since_boot(get_absolute_time());
     bool          autoPingFlag = 0;
     bool          NAK_detected = 0;
     uint8_t       NAK_recovery_counter = 0;
