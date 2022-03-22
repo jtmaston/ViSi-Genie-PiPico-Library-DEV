@@ -90,7 +90,7 @@ bool Genie::Begin_common() {
   while ( to_ms_since_boot(get_absolute_time()) - timeout_start <= 2000 ) { 
     if ( DoEvents() == GENIE_REPORT_OBJ && !genieStart ) return 1;
   }
-  //if ( debugSerial != nullptr ) debugSerial->println(F("[Genie]: Failed to detect display during setup"));    // TODO: debugSerial should be bool? like a flag
+  if ( debugSerial != nullptr ) //debugSerial->println(F("[Genie]: Failed to detect display during setup"));    // TODO: debugSerial should be bool? like a flag
     std::cout << "[Genie]: Failed to detect display during setup\n";
   if ( UserHandler ) {
     uint8_t buffer[6] = { GENIE_DISCONNECTED, 0, 0, 0, 0 };
@@ -127,13 +127,13 @@ void Genie::SetRecoveryInterval(uint8_t pulses) {
 void Genie::AttachEventHandler(UserEventHandlerPtr userHandler) {
   UserHandler = userHandler;
   if ( !displayDetected ) {
-    //if ( debugSerial != nullptr ) debugSerial->println(F("[Genie]: Handler setup, display disconnected"));
+    if ( debugSerial != nullptr ) //debugSerial->println(F("[Genie]: Handler setup, display disconnected"));
     std::cout << "[Genie]: Handler setup, display disconnected\n";
     uint8_t buffer[6] = { GENIE_DISCONNECTED, 0, 0, 0, 0 };
     _incomming_queue.push_back(buffer, 6);
   }
   else {
-    //if ( debugSerial != nullptr ) debugSerial->println(F("[Genie]: Handler setup, display online"));
+    if ( debugSerial != nullptr ) //debugSerial->println(F("[Genie]: Handler setup, display online"));
     std::cout << "[Genie]: Handler setup, display online\n";
     uint8_t buffer[6] = { GENIE_READY, 0, 0, 0, 0 };
     _incomming_queue.push_back(buffer, 6);
@@ -164,7 +164,7 @@ int16_t Genie::GetNextByte() {
   }
   uint32_t timeout = to_ms_since_boot(get_absolute_time());
   //while ( to_ms_since_boot(get_absolute_time()) - timeout < 100 && deviceSerial->available() < 1 );
-  while ( to_ms_since_boot(get_absolute_time()) - timeout < 100 && uart_is_readable(deviceSerial) );
+  while ( (to_ms_since_boot(get_absolute_time()) - timeout < 100) && uart_is_readable(deviceSerial) );
   //return deviceSerial->read();
   return uart_getc(deviceSerial);
 }
@@ -178,7 +178,7 @@ int32_t Genie::GetNextDoubleByte() {
   //while ( to_ms_since_boot(get_absolute_time()) - timeout < 200 && deviceSerial->available() < 2 );
   //return ((uint16_t)(deviceSerial->read() << 8) | deviceSerial->read());
 
-  while ( to_ms_since_boot(get_absolute_time()) - timeout < 200 && uart_is_readable(deviceSerial) );
+  while ( (to_ms_since_boot(get_absolute_time()) - timeout < 200) && uart_is_readable(deviceSerial) );
   return ((uint16_t)(uart_getc(deviceSerial) << 8) | uart_getc(deviceSerial));
 }
 
@@ -326,7 +326,7 @@ bool Genie::WriteContrast(uint8_t value) {
 // ## User Ping #########################
 // ######################################
 void Genie::Ping(uint16_t interval) {
-  if ( displayDetected && to_ms_since_boot(get_absolute_time()) - pingSpacer > interval ) {
+  if ( displayDetected && ( to_ms_since_boot(get_absolute_time()) - pingSpacer > interval )) {
     uint8_t buffer[4] = { (uint8_t)GENIE_READ_OBJ, GENIE_OBJ_FORM , 0, 10 };
     writeMode(buffer,4);
     pingRequest = 1;
@@ -369,7 +369,7 @@ inline int16_t Genie::DoEvents() {
 
   if ( to_ms_since_boot(get_absolute_time()) - autoPingTimer > ( ( displayDetected && !NAK_detected ) ? autoPing_swapSpeed = AUTO_PING_CYCLE : autoPing_swapSpeed = recover_pulse ) ) {
     autoPingTimer = to_ms_since_boot(get_absolute_time());
-    if ( displayDetected && to_ms_since_boot(get_absolute_time()) - display_uptime > DISPLAY_TIMEOUT ) {
+    if ( displayDetected && ( to_ms_since_boot(get_absolute_time()) - display_uptime ) > DISPLAY_TIMEOUT ) {
       display_uptime = to_ms_since_boot(get_absolute_time());
        if ( debugSerial != nullptr ) //debugSerial->println(F("[Genie]: disconnected by display timeout"));
         std::cout << "[Genie]: disconnected by display timeout\n";
@@ -384,23 +384,30 @@ inline int16_t Genie::DoEvents() {
 
   if ( uart_is_readable(deviceSerial) ) {
     uint16_t c = uart_getc(deviceSerial);
-    std::cout << std::dec << c << '\n';
+    if(debugSerial != nullptr)
+      std::cout << std::dec << c << '\n';
     switch ( c ) {
       case GENIE_REPORT_OBJ: {
           sleep_ms(10);
           if ( uart_is_readable(deviceSerial) ) {
-            std::cout << "Buffer available\n";
+            if(debugSerial != nullptr)
+              std::cout << "Buffer available\n";
             uint8_t buffer[6] = { c }, checksum = 0;
             checksum ^= c;
             for ( uint8_t i = 1; i < 6; i++ ) {
               //buffer[i] = deviceSerial->read();
               buffer[i] = uart_getc(deviceSerial);
-              std::cout << std::dec << (int) buffer[i] << " ";
+              if(debugSerial != nullptr)
+                std::cout << std::dec << (int) buffer[i] << " ";
               //printf("%x ", buffer[i]);
               if ( i < 5 ) checksum ^= buffer[i];
             }
-            std::cout << "Checksum: " << (int) checksum << '\n';
-            std::cout << '\n';
+            if(debugSerial != nullptr)
+            {
+              std::cout << "Checksum: " << (int) checksum << '\n';
+              std::cout << '\n';
+            }
+            
             if ( checksum == buffer[5] ) {
               if ( GENIE_OBJ_FORM == buffer[1] ) {
                 currentForm = buffer[4];
@@ -485,7 +492,7 @@ inline int16_t Genie::DoEvents() {
                 std::cout << " magic byte(s). Flushing rest...\n";
               }
               uint32_t timeout = to_ms_since_boot(get_absolute_time());
-              while ( magic_report_len && to_ms_since_boot(get_absolute_time()) - timeout < 100 ) {
+              while ( magic_report_len && ( to_ms_since_boot(get_absolute_time()) - timeout ) < 100 ) {
                 if ( uart_is_readable(deviceSerial) ) {
                   magic_report_len--;
                   //deviceSerial->read();
@@ -513,7 +520,7 @@ inline int16_t Genie::DoEvents() {
             for ( uint16_t i = 0; i < data[2]; i++) uart_getc(deviceSerial);
           }
           uint32_t timeout = to_ms_since_boot(get_absolute_time());
-          while ( to_ms_since_boot(get_absolute_time()) - timeout < 5000 && !uart_is_readable(deviceSerial) );
+          while ( ( to_ms_since_boot(get_absolute_time()) - timeout < 5000 ) && !uart_is_readable(deviceSerial) );
           uart_getc(deviceSerial);
           return GENIEM_REPORT_BYTES;
         }
@@ -538,7 +545,7 @@ inline int16_t Genie::DoEvents() {
           }
           uint32_t timeout = to_ms_since_boot(get_absolute_time());
           //while ( millis() - timeout < 5000 && deviceSerial->available() < 1 );
-          while(to_ms_since_boot(get_absolute_time()) - timeout < 5000 && uart_is_readable(uart1) < 0);
+          while((to_ms_since_boot(get_absolute_time()) - timeout < 5000) && uart_is_readable(uart1) < 0);
           //deviceSerial->read();
           uart_getc(uart1);
           return GENIEM_REPORT_DBYTES;
