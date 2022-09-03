@@ -451,7 +451,7 @@ inline int16_t Genie::DoEvents()
       sleep_ms(10);
       if (uart_is_readable(deviceSerial))
       {
-        std::cout << "Buffer available\n";
+        //std::cout << "Buffer available\n";
         uint8_t buffer[6] = {c}, checksum = 0;
         checksum ^= c;
         for (uint8_t i = 1; i < 6; i++)
@@ -463,8 +463,8 @@ inline int16_t Genie::DoEvents()
           if (i < 5)
             checksum ^= buffer[i];
         }
-        std::cout << "Checksum: " << (int)checksum << '\n';
-        std::cout << '\n';
+        //std::cout << "Checksum: " << (int)checksum << '\n';
+        //std::cout << '\n';
         if (checksum == buffer[5])
         {
           if (GENIE_OBJ_FORM == buffer[1])
@@ -952,8 +952,6 @@ uint16_t Genie::WriteStr(uint16_t index, unsigned n, int base)
 
 uint16_t Genie::WriteStr(uint16_t index, double number, int digits)
 {
-  std::cout << "Called!\n";
-  std::cout.flush();
   char buf[8 * sizeof(long) + 1]; // Assumes 8-bit chars plus zero byte.
   char *str = &buf[sizeof(buf) - 1];
   *str = '\0';
